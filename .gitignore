@@ -1,0 +1,15 @@
+# Dependencies and generated output (client and server)
+node_modules/
+dist/
+build/
+coverage/
+
+# Local environment settings and secrets; keep shareable templates
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Logs and macOS metadata
+*.log
+.DS_Store

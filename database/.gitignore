@@ -1,0 +1,10 @@
+# Local PostgreSQL data and backups
+data/
+pgdata/
+backups/
+*.dump
+*.backup
+*.sql.gz
+
+# Keep schema, migrations, and safe seeds in Git.
+# Store SQL data exports in backups/ so they are ignored.
