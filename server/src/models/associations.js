@@ -9,6 +9,7 @@ import Supplier from "./Supplier.js";
 import PurchaseOrder from "./PurchaseOrder.js";
 import PurchaseOrderItem from "./PurchaseOrderItem.js";
 import PurchaseReceipt from "./PurchaseReceipt.js";
+import InventoryEvent from "./InventoryEvent.js";
 
 // One menu item can contain many ingredients.
 MenuItem.belongsToMany(Ingredient, {
@@ -99,4 +100,22 @@ PurchaseReceipt.belongsTo(PurchaseOrderItem, {
 StockMovement.belongsTo(PurchaseReceipt, {
   as: "purchaseReceipt",
   foreignKey: "purchase_receipt_id",
+});
+
+// Every event belongs to an ingredient.
+InventoryEvent.belongsTo(Ingredient, {
+  as: "ingredient",
+  foreignKey: "ingredient_id",
+});
+
+// One event can have a stock movement.
+// A zero-variance count has no movement.
+InventoryEvent.hasOne(StockMovement, {
+  as: "movement",
+  foreignKey: "inventory_event_id",
+});
+
+StockMovement.belongsTo(InventoryEvent, {
+  as: "inventoryEvent",
+  foreignKey: "inventory_event_id",
 });

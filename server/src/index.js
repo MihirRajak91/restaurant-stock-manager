@@ -5,6 +5,7 @@ import ingredientRoutes from "./routes/ingredientRoutes.js";
 import menuItemRoutes from "./routes/menuItemRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import purchaseRoutes from "./routes/purchaseRoutes.js";
+import inventoryEventRoutes from "./routes/inventoryEventRoutes.js";
 
 // Register associations before running associated queries.
 import "./models/associations.js";
@@ -20,6 +21,7 @@ app.use(express.json());
 
 app.use("/api", orderRoutes);
 app.use("/api/purchases", purchaseRoutes);
+app.use("/api/inventory-events", inventoryEventRoutes);
 
 app.get("/api/health", (req,res) => {
     res.json({

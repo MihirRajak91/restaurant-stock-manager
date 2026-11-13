@@ -51,6 +51,11 @@ purchase_receipt_id: {
   allowNull: true,
 },
 
+inventory_event_id: {
+  type: DataTypes.BIGINT,
+  allowNull: true,
+},
+
 }, {
   tableName: "stock_movements",
   timestamps: false,
