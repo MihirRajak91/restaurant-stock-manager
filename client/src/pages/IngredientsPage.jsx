@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from "react";
+import { apiFetch } from "../lib/api.js";
 
 const API = "http://localhost:5000/api/ingredients";
 
@@ -39,7 +40,7 @@ function IngredientsPage() {
           status,
         });
 
-        const response = await fetch(
+        const response = await apiFetch(
           `${API}?${params}`,
           { signal: controller.signal }
         );
@@ -71,7 +72,7 @@ function IngredientsPage() {
 
   // Shared helper for POST/PATCH requests.
   async function sendRequest(url, method, body) {
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method,
       headers: {
         "Content-Type": "application/json",

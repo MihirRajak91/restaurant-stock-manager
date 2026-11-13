@@ -7,9 +7,18 @@ import MenuItem from "../models/MenuItem.js";
 import RecipeIngredient from "../models/RecipeIngredient.js";
 import { formatMenuItem } from "../services/recipeCosting.js";
 import menuCategories from "../../../shared/menuCategories.json" with { type: "json" };
+import {
+  authenticate,
+  allowRoles,
+} from "../middleware/auth.js";
 
 const { UniqueConstraintError } = pkg;
 const router = Router();
+
+router.use(
+  authenticate,
+  allowRoles("admin", "manager")
+);
 
 router.get("/", async (req, res) => {
   try {

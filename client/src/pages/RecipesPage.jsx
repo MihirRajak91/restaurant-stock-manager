@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from "react";
+import { apiFetch } from "../lib/api.js";
 import menuCategories from "../../../shared/menuCategories.json";
 
 const API = "http://localhost:5000/api";
@@ -25,8 +26,8 @@ function RecipesPage() {
   async function loadData() {
     const [ingredientResponse, menuResponse] =
       await Promise.all([
-        fetch(`${API}/ingredients?status=active`),
-        fetch(`${API}/menu-items`),
+        apiFetch(`${API}/ingredients?status=active`),
+        apiFetch(`${API}/menu-items`),
       ]);
 
     if (!ingredientResponse.ok || !menuResponse.ok) {
@@ -91,7 +92,7 @@ function RecipesPage() {
     };
 
     try {
-      const response = await fetch(`${API}/menu-items`, {
+      const response = await apiFetch(`${API}/menu-items`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -1,5 +1,6 @@
 
 import { useEffect, useRef, useState } from "react";
+import { apiFetch } from "../lib/api.js";
 
 const API = "http://localhost:5000/api";
 
@@ -29,8 +30,8 @@ function WasteAdjustmentsPage() {
 
   async function loadData() {
     const responses = await Promise.all([
-      fetch(`${API}/ingredients?status=active`),
-      fetch(`${API}/inventory-events`),
+      apiFetch(`${API}/ingredients?status=active`),
+      apiFetch(`${API}/inventory-events`),
     ]);
 
     if (responses.some((response) => !response.ok)) {
@@ -97,7 +98,7 @@ function WasteAdjustmentsPage() {
     setMessage("");
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `${API}/inventory-events`,
         {
           method: "POST",

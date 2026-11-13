@@ -5,8 +5,10 @@ import sequelize from "../db.js";
 import Order from "../models/Order.js";
 import OrderItem from "../models/OrderItem.js";
 import MenuItem from "../models/MenuItem.js";
-import Ingredient from "../models/Ingredient.js";
-import StockMovement from "../models/StockMovement.js";
+import {
+  authenticate,
+  allowRoles,
+} from "../middleware/auth.js";
 
 import {
   prepareOrderItem,
@@ -14,9 +16,14 @@ import {
 } from "../services/prepareOrderItem.js";
 
 const router = Router();
+router.use(authenticate);
 
 // GET all kitchen tickets.
-router.get("/orders", async (req, res) => {
+// All three roles may view kitchen tickets.
+router.get(
+  "/orders",
+  allowRoles("admin", "manager", "kitchen"),
+  async (req, res) => {
   try {
     const orders = await Order.findAll({
       include: [{
@@ -41,7 +48,11 @@ router.get("/orders", async (req, res) => {
 });
 
 // POST a new kitchen ticket (one type of menu item).
-router.post("/orders", async (req, res) => {
+// Only Admin and Manager may create kitchen tickets.
+router.post(
+  "/orders",
+  allowRoles("admin", "manager"),
+  async (req, res) => {
   const menuItemId = Number(req.body?.menu_item_id);
   const quantity = Number(req.body?.quantity);
 
@@ -111,7 +122,11 @@ router.post("/orders", async (req, res) => {
 });
 
 // POST to mark an order item Prepared.
-router.post("/order-items/:id/prepare", async (req, res) => {
+// All three roles may mark a kitchen item Prepared.
+router.post(
+  "/order-items/:id/prepare",
+  allowRoles("admin", "manager", "kitchen"),
+  async (req, res) => {
   const itemId = Number(req.params.id);
 
   if (!Number.isSafeInteger(itemId) || itemId <= 0) {
@@ -131,29 +146,6 @@ router.post("/order-items/:id/prepare", async (req, res) => {
       message: error instanceof HttpError
         ? error.message
         : "Failed to prepare order item",
-    });
-  }
-});
-
-// GET recent inventory movement history.
-router.get("/stock-movements", async (req, res) => {
-  try {
-    const movements = await StockMovement.findAll({
-      include: [{
-        model: Ingredient,
-        as: "ingredient",
-        attributes: ["name", "unit"],
-      }],
-      order: [["id", "DESC"]],
-      limit: 50,
-    });
-
-    return res.json(movements);
-  } catch (error) {
-    console.error(error);
-
-    return res.status(500).json({
-      message: "Failed to load stock movements",
     });
   }
 });

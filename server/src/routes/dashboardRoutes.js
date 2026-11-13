@@ -1,10 +1,13 @@
 
 import { Router } from "express";
+import { authenticate, allowRoles } from "../middleware/auth.js";
 
 import { getDashboardData } from
   "../services/dashboardService.js";
 
 const router = Router();
+
+router.use(authenticate, allowRoles("admin", "manager"));
 
 // GET /api/dashboard
 router.get("/", async (req, res) => {

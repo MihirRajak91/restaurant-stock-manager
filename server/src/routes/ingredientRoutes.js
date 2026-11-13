@@ -4,9 +4,18 @@ import Decimal from "decimal.js";
 import sequelize from "../db.js";
 import Ingredient from "../models/Ingredient.js";
 import StockMovement from "../models/StockMovement.js";
+import {
+  authenticate,
+  allowRoles,
+} from "../middleware/auth.js";
 
 const { Op, UniqueConstraintError } = pkg;
 const router = Router();
+
+router.use(
+  authenticate,
+  allowRoles("admin", "manager")
+);
 
 const validQuantity = /^\d{1,9}(\.\d{1,3})?$/;
 const validCost = /^\d{1,8}(\.\d{1,4})?$/;

@@ -2,6 +2,7 @@
 import { Router } from "express";
 import Decimal from "decimal.js";
 import { UniqueConstraintError } from "sequelize";
+import { authenticate, allowRoles } from "../middleware/auth.js";
 
 import sequelize from "../db.js";
 import Supplier from "../models/Supplier.js";
@@ -15,6 +16,8 @@ import {
 } from "../services/receivePurchase.js";
 
 const router = Router();
+
+router.use(authenticate, allowRoles("admin", "manager"));
 
 const quantityPattern = /^(0|[1-9]\d{0,8})(\.\d{1,3})?$/;
 const pricePattern = /^(0|[1-9]\d{0,9})(\.\d{1,2})?$/;

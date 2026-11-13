@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { apiFetch } from "../lib/api.js";
 
 const API = "http://localhost:5000/api/dashboard";
 
@@ -40,7 +41,7 @@ function DashboardPage() {
     setRefreshing(true);
 
     try {
-      const response = await fetch(API, {
+      const response = await apiFetch(API, {
         signal: controller.signal,
       });
 

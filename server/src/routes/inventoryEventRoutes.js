@@ -1,5 +1,6 @@
 
 import { Router } from "express";
+import { authenticate, allowRoles } from "../middleware/auth.js";
 
 import InventoryEvent from "../models/InventoryEvent.js";
 import Ingredient from "../models/Ingredient.js";
@@ -10,6 +11,8 @@ import {
 } from "../services/recordInventoryEvent.js";
 
 const router = Router();
+
+router.use(authenticate, allowRoles("admin", "manager"));
 
 // Retrieve recent waste and stock-count events.
 router.get("/", async (req, res) => {

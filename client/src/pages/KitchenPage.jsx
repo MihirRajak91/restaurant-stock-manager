@@ -1,78 +1,91 @@
 
 import { useEffect, useState } from "react";
 
-const API = "http://localhost:5000/api";
+import { useAuth } from "../auth/AuthContext.jsx";
+import { apiFetch } from "../lib/api.js";
 
 function KitchenPage() {
-  const [menuItems, setMenuItems] = useState([]);
+  const { user } = useAuth();
+
+  const canCreate = ["admin", "manager"].includes(user.role);
+
   const [orders, setOrders] = useState([]);
-  const [movements, setMovements] = useState([]);
-  const [ingredients, setIngredients] = useState([]);
+  const [menuItems, setMenuItems] = useState([]);
 
   const [menuItemId, setMenuItemId] = useState("");
   const [quantity, setQuantity] = useState("1");
+
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
-  async function loadData() {
-    const responses = await Promise.all([
-      fetch(`${API}/menu-items`),
-      fetch(`${API}/orders`),
-      fetch(`${API}/stock-movements`),
-      fetch(`${API}/ingredients?status=active`),
-    ]);
+  async function loadOrders() {
+    const response = await apiFetch("/api/orders");
 
-    if (responses.some((response) => !response.ok)) {
-      throw new Error("Failed to load kitchen data");
+    if (!response.ok) {
+      throw new Error("Failed to load kitchen orders");
     }
 
-    const [menu, tickets, history, stock] =
-      await Promise.all(
-        responses.map((response) => response.json())
-      );
-
-    setMenuItems(menu);
-    setOrders(tickets);
-    setMovements(history);
-    setIngredients(stock);
+    setOrders(await response.json());
   }
 
   useEffect(() => {
-    loadData().catch((err) => setError(err.message));
-  }, []);
+    async function loadPage() {
+      try {
+        await loadOrders();
 
-  async function sendPost(path, body) {
-    const response = await fetch(`${API}${path}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: body ? JSON.stringify(body) : undefined,
-    });
+        // Kitchen Staff shouldn't fetch protected
+        // menu-management data.
+        if (canCreate) {
+          const response = await apiFetch("/api/menu-items");
 
-    const data = await response.json();
+          if (!response.ok) {
+            throw new Error("Failed to load menu items");
+          }
 
-    if (!response.ok) {
-      throw new Error(data.message || "Request failed");
+          setMenuItems(await response.json());
+        }
+      } catch (err) {
+        setError(err.message);
+      }
     }
 
-    return data;
+    loadPage();
+  }, [canCreate]);
+
+  async function sendPost(path, data) {
+    const response = await apiFetch(path, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data ?? {}),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || "Request failed");
+    }
+
+    return result;
   }
 
   async function createOrder(event) {
     event.preventDefault();
+
     setBusy(true);
     setError("");
     setMessage("");
 
     try {
-      await sendPost("/orders", {
+      await sendPost("/api/orders", {
         menu_item_id: Number(menuItemId),
         quantity: Number(quantity),
       });
 
       setMessage("Kitchen order created");
-      setQuantity("1");
-      await loadData();
+      await loadOrders();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -87,16 +100,16 @@ function KitchenPage() {
 
     try {
       const result = await sendPost(
-        `/order-items/${itemId}/prepare`
+        `/api/order-items/${itemId}/prepare`
       );
 
       setMessage(
         result.already_prepared
-          ? "This item was already prepared"
-          : "Item prepared and ingredients deducted"
+          ? "This order item was already prepared"
+          : "Prepared successfully. Stock deducted."
       );
 
-      await loadData();
+      await loadOrders();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -105,58 +118,63 @@ function KitchenPage() {
   }
 
   return (
-    <section style={{ marginTop: 40 }}>
+    <section>
       <h1>Kitchen Orders</h1>
 
-      <h2>Create Kitchen Ticket</h2>
+      {canCreate && (
+        <form onSubmit={createOrder}>
+          <h2>Create Kitchen Order</h2>
 
-      <form onSubmit={createOrder}>
-        <select
-          value={menuItemId}
-          required
-          onChange={(e) => setMenuItemId(e.target.value)}
-        >
-          <option value="">Select menu item</option>
-          {menuItems
-            .filter((item) => item.is_active)
-            .map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name} - NPR {item.selling_price}
-              </option>
-            ))}
-        </select>
+          <select
+            value={menuItemId}
+            required
+            onChange={(e) => setMenuItemId(e.target.value)}
+          >
+            <option value="">Select menu item</option>
 
-        <label>
-          Servings:
+            {menuItems
+              .filter((item) => item.is_active)
+              .map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+          </select>
+
           <input
             type="number"
             min="1"
             max="20"
             value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
             required
+            onChange={(e) => setQuantity(e.target.value)}
           />
-        </label>
 
-        <button type="submit" disabled={busy}>
-          Create Order
-        </button>
-      </form>
+          <button disabled={busy}>Create Order</button>
+        </form>
+      )}
 
       {error && <p role="alert">{error}</p>}
       {message && <p role="status">{message}</p>}
 
       <h2>Kitchen Tickets</h2>
 
-      {orders.length === 0 && <p>No orders yet.</p>}
+      <button
+        type="button"
+        onClick={() => loadOrders().catch(
+          (err) => setError(err.message)
+        )}
+      >
+        Refresh Tickets
+      </button>
 
       {orders.map((order) => (
-        <div
+        <article
           key={order.id}
           style={{
             border: "1px solid #ddd",
             padding: 16,
-            marginBottom: 12,
+            marginTop: 12,
           }}
         >
           <h3>Ticket #{order.id}</h3>
@@ -179,54 +197,8 @@ function KitchenPage() {
               )}
             </div>
           ))}
-        </div>
+        </article>
       ))}
-
-      <h2>Current Ingredient Stock</h2>
-
-      <table border="1" cellPadding="8">
-        <thead>
-          <tr>
-            <th>Ingredient</th>
-            <th>Available</th>
-          </tr>
-        </thead>
-        <tbody>
-          {ingredients.map((ingredient) => (
-            <tr key={ingredient.id}>
-              <td>{ingredient.name}</td>
-              <td>
-                {ingredient.quantity_on_hand}
-                {" "}{ingredient.unit}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <h2>Recent Inventory Movements</h2>
-
-      <table border="1" cellPadding="8">
-        <thead>
-          <tr>
-            <th>Ingredient</th>
-            <th>Type</th>
-            <th>Change</th>
-          </tr>
-        </thead>
-        <tbody>
-          {movements.map((movement) => (
-            <tr key={movement.id}>
-              <td>{movement.ingredient.name}</td>
-              <td>{movement.movement_type}</td>
-              <td>
-                {movement.quantity_delta}
-                {" "}{movement.ingredient.unit}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </section>
   );
 }

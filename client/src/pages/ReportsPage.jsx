@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from "react";
+import { apiFetch } from "../lib/api.js";
 
 const API = "http://localhost:5000/api/reports";
 
@@ -174,7 +175,7 @@ function ReportsPage() {
       try {
         const params = new URLSearchParams(appliedDates);
 
-        const response = await fetch(
+        const response = await apiFetch(
           `${API}?${params}`,
           { signal: controller.signal }
         );

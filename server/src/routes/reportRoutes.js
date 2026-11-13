@@ -1,8 +1,11 @@
 
 import { Router } from "express";
+import { authenticate, allowRoles } from "../middleware/auth.js";
 import { getReportData } from "../services/reportService.js";
 
 const router = Router();
+
+router.use(authenticate, allowRoles("admin", "manager"));
 
 function validDate(value) {
   if (

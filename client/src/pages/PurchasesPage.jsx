@@ -1,5 +1,6 @@
 
 import { useEffect, useRef, useState } from "react";
+import { apiFetch } from "../lib/api.js";
 
 const API = "http://localhost:5000/api";
 
@@ -29,9 +30,9 @@ function PurchasesPage() {
   // Retrieve suppliers, ingredients, and purchase orders.
   async function loadData() {
     const responses = await Promise.all([
-      fetch(`${API}/purchases/suppliers`),
-      fetch(`${API}/ingredients?status=active`),
-      fetch(`${API}/purchases/orders`),
+      apiFetch(`${API}/purchases/suppliers`),
+      apiFetch(`${API}/ingredients?status=active`),
+      apiFetch(`${API}/purchases/orders`),
     ]);
 
     if (responses.some((response) => !response.ok)) {
@@ -54,7 +55,7 @@ function PurchasesPage() {
 
   // Reusable POST helper.
   async function post(path, body) {
-    const response = await fetch(`${API}${path}`, {
+    const response = await apiFetch(`${API}${path}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
