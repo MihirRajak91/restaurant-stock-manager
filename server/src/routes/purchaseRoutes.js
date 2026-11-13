@@ -135,7 +135,24 @@ router.post("/orders", async (req, res) => {
     !new Decimal(quantity_ordered).greaterThan(0) ||
     typeof unit_price !== "string" ||
     !pricePattern.test(unit_price)
-  ) {
+  )
+  
+    await writeAudit({
+    transaction,
+    actor: req.user,
+    action: "purchase_order.created",
+    entityType: "purchase_order",
+    entityId: order.id,
+    details: {
+        supplier_id: String(supplier.id),
+        purchase_order_item_id: String(item.id),
+        ingredient_id: String(ingredient.id),
+        quantity_ordered: item.quantity_ordered,
+        purchase_unit: item.purchase_unit,
+    },
+    });
+ 
+  {
     return res.status(400).json({
       message: "Invalid purchase order details",
     });
@@ -226,6 +243,7 @@ router.post("/items/:id/receive", async (req, res) => {
       itemId,
       quantity: req.body?.quantity_received,
       idempotencyKey: req.body?.idempotency_key,
+      actor: req.user,
     });
 
     return res.json(result);

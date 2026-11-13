@@ -6,6 +6,7 @@ import sequelize from "../db.js";
 import Ingredient from "../models/Ingredient.js";
 import InventoryEvent from "../models/InventoryEvent.js";
 import StockMovement from "../models/StockMovement.js";
+import { writeAudit } from "./auditService.js";
 
 // Errors that routes can return to the client.
 export class InventoryError extends Error {
@@ -41,7 +42,7 @@ function summarize(event, alreadyRecorded) {
   };
 }
 
-export async function recordInventoryEvent(input) {
+export async function recordInventoryEvent(input, actor) {
   const {
     ingredient_id,
     event_type,
@@ -182,6 +183,7 @@ export async function recordInventoryEvent(input) {
       const event = await InventoryEvent.create(
         {
           ingredient_id: ingredient.id,
+          recorded_by_user_id: actor.id,
           event_type,
           reason,
           entered_quantity: entered.toFixed(3),
@@ -220,6 +222,25 @@ export async function recordInventoryEvent(input) {
           { transaction }
         );
       }
+
+      await writeAudit({
+        transaction,
+        actor,
+        action: event_type === "waste"
+          ? "inventory.waste_recorded"
+          : "inventory.count_recorded",
+        entityType: "inventory_event",
+        entityId: event.id,
+        details: {
+          ingredient_id: String(ingredient.id),
+          ingredient_name: ingredient.name,
+          reason,
+          quantity_before: before.toFixed(3),
+          quantity_after: after.toFixed(3),
+          quantity_delta: delta.toFixed(3),
+          unit: ingredient.unit,
+        },
+      });
 
       return summarize(event, false);
     });

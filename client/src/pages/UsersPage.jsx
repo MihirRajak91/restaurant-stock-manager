@@ -1,6 +1,8 @@
 
 import { useEffect, useState } from "react";
+
 import { apiFetch } from "../lib/api.js";
+import { useAuth } from "../auth/AuthContext.jsx";
 
 const emptyForm = {
   name: "",
@@ -10,52 +12,140 @@ const emptyForm = {
 };
 
 function UsersPage() {
+  const { user: currentUser } = useAuth();
+
   const [users, setUsers] = useState([]);
+  const [roleDrafts, setRoleDrafts] = useState({});
+
   const [form, setForm] = useState({ ...emptyForm });
+
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
   async function loadUsers() {
-    const response = await apiFetch("/api/auth/users");
+    const response = await apiFetch("/api/users");
 
     if (!response.ok) {
       throw new Error("Failed to load employees");
     }
 
-    setUsers(await response.json());
+    const data = await response.json();
+
+    setUsers(data);
+
+    setRoleDrafts(
+      Object.fromEntries(
+        data.map((user) => [String(user.id), user.role])
+      )
+    );
   }
 
   useEffect(() => {
     loadUsers().catch((err) => setError(err.message));
   }, []);
 
-  async function createUser(event) {
+  async function request(path, method, body) {
+    const response = await apiFetch(path, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Request failed");
+    }
+
+    return data;
+  }
+
+  async function createEmployee(event) {
     event.preventDefault();
+    setBusy(true);
+    setError("");
+    setMessage("");
+
+    try {
+      await request("/api/users", "POST", form);
+
+      setForm({ ...emptyForm });
+      setMessage("Employee account created");
+
+      await loadUsers();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveRole(target) {
+    const role = roleDrafts[String(target.id)];
+
+    if (role === target.role) return;
+
+    if (!window.confirm(
+      `Change ${target.name}'s role to ${role}?`
+    )) {
+      return;
+    }
 
     setBusy(true);
     setError("");
     setMessage("");
 
     try {
-      const response = await apiFetch("/api/auth/users", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(form),
-      });
+      await request(
+        `/api/users/${target.id}/role`,
+        "PATCH",
+        { role }
+      );
 
-      const data = await response.json();
+      setMessage(
+        "Role updated. Existing employee sessions were invalidated."
+      );
 
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Failed to create employee"
-        );
-      }
+      await loadUsers();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
 
-      setForm({ ...emptyForm });
-      setMessage("Employee account created successfully");
+  async function changeStatus(target) {
+    const nextStatus = !target.is_active;
+
+    const action = nextStatus
+      ? "reactivate"
+      : "deactivate";
+
+    if (!window.confirm(
+      `Are you sure you want to ${action} ${target.name}?`
+    )) {
+      return;
+    }
+
+    setBusy(true);
+    setError("");
+    setMessage("");
+
+    try {
+      await request(
+        `/api/users/${target.id}/status`,
+        "PATCH",
+        { is_active: nextStatus }
+      );
+
+      setMessage(
+        nextStatus
+          ? "Employee reactivated"
+          : "Employee deactivated"
+      );
 
       await loadUsers();
     } catch (err) {
@@ -69,15 +159,18 @@ function UsersPage() {
     <section>
       <h1>Employee Management</h1>
 
-      <form onSubmit={createUser}>
-        <h2>Create Employee</h2>
+      {message && <p role="status">{message}</p>}
+      {error && <p role="alert">{error}</p>}
 
+      <h2>Create Employee</h2>
+
+      <form onSubmit={createEmployee}>
         <div>
           <label>Name: </label>
           <input
-            value={form.name}
             required
             maxLength={100}
+            value={form.name}
             onChange={(e) => setForm({
               ...form,
               name: e.target.value,
@@ -89,9 +182,8 @@ function UsersPage() {
           <label>Email: </label>
           <input
             type="email"
-            value={form.email}
             required
-            maxLength={254}
+            value={form.email}
             onChange={(e) => setForm({
               ...form,
               email: e.target.value,
@@ -103,11 +195,11 @@ function UsersPage() {
           <label>Initial Password: </label>
           <input
             type="password"
-            value={form.password}
             required
             minLength={12}
             maxLength={128}
             autoComplete="new-password"
+            value={form.password}
             onChange={(e) => setForm({
               ...form,
               password: e.target.value,
@@ -135,34 +227,92 @@ function UsersPage() {
         </button>
       </form>
 
-      {error && <p role="alert">{error}</p>}
-      {message && <p role="status">{message}</p>}
+      <hr />
 
-      <h2>Employees</h2>
+      <h2>Existing Employees</h2>
 
-      <table border="1" cellPadding="10">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {users.map((user) => (
-            <tr key={user.id}>
-              <td>{user.name}</td>
-              <td>{user.email}</td>
-              <td>{user.role}</td>
-              <td>
-                {user.is_active ? "Active" : "Disabled"}
-              </td>
+      <div style={{ overflowX: "auto" }}>
+        <table
+          border="1"
+          cellPadding="10"
+          style={{ width: "100%" }}
+        >
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+
+          <tbody>
+            {users.map((employee) => {
+              const isSelf =
+                String(employee.id) === String(currentUser.id);
+
+              const selectedRole =
+                roleDrafts[String(employee.id)] ??
+                employee.role;
+
+              return (
+                <tr key={employee.id}>
+                  <td>{employee.name}</td>
+                  <td>{employee.email}</td>
+
+                  <td>
+                    <select
+                      disabled={busy || isSelf}
+                      value={selectedRole}
+                      onChange={(e) => setRoleDrafts({
+                        ...roleDrafts,
+                        [String(employee.id)]: e.target.value,
+                      })}
+                    >
+                      <option value="admin">Admin</option>
+                      <option value="manager">Manager</option>
+                      <option value="kitchen">
+                        Kitchen Staff
+                      </option>
+                    </select>
+                  </td>
+
+                  <td>
+                    {employee.is_active
+                      ? "Active"
+                      : "Inactive"}
+                  </td>
+
+                  <td>
+                    <button
+                      disabled={
+                        busy ||
+                        isSelf ||
+                        selectedRole === employee.role
+                      }
+                      onClick={() => saveRole(employee)}
+                    >
+                      Save Role
+                    </button>
+
+                    <button
+                      disabled={busy || isSelf}
+                      onClick={() => changeStatus(employee)}
+                    >
+                      {employee.is_active
+                        ? "Deactivate"
+                        : "Reactivate"}
+                    </button>
+
+                    {isSelf && <span> Current account</span>}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </section>
   );
 }

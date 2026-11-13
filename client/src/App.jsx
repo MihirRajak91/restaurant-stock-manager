@@ -23,6 +23,7 @@ import KitchenPage from "./pages/KitchenPage.jsx";
 import PurchasesPage from "./pages/PurchasesPage.jsx";
 import WasteAdjustmentsPage from "./pages/WasteAdjustmentsPage.jsx";
 import ReportsPage from "./pages/ReportsPage.jsx";
+import AuditLogsPage from "./pages/AuditLogsPage.jsx";
 
 function AppLayout() {
   const { user, logout } = useAuth();
@@ -70,6 +71,11 @@ function AppLayout() {
       label: "Employees",
       roles: ["admin"],
     },
+    {
+      path: "/audit-logs",
+      label: "Activity Log",
+      roles: ["admin"],
+   },
   ];
 
   async function handleLogout() {
@@ -191,6 +197,10 @@ function App() {
             <Route
               path="/users"
               element={<UsersPage />}
+            />
+            <Route
+              path="/audit-logs"
+              element={<AuditLogsPage />}
             />
           </Route>
         </Route>

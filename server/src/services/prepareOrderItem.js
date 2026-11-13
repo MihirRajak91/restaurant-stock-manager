@@ -6,6 +6,7 @@ import OrderItem from "../models/OrderItem.js";
 import Ingredient from "../models/Ingredient.js";
 import RecipeIngredient from "../models/RecipeIngredient.js";
 import StockMovement from "../models/StockMovement.js";
+import { writeAudit } from "./auditService.js";
 
 // Custom error with an HTTP status.
 export class HttpError extends Error {
@@ -15,7 +16,7 @@ export class HttpError extends Error {
   }
 }
 
-export async function prepareOrderItem(itemId) {
+export async function prepareOrderItem(itemId, actor) {
   return sequelize.transaction(async (transaction) => {
 
     // 1. Lock this order item first.
@@ -148,13 +149,37 @@ export async function prepareOrderItem(itemId) {
     }
 
     // 7. Mark the order item Prepared.
+
     await orderItem.update(
-      {
+    {
         status: "prepared",
         prepared_at: new Date(),
-      },
-      { transaction }
+        prepared_by_user_id: actor.id,
+    },
+    { transaction }
     );
+
+    // Record the completed preparation.
+    await writeAudit({
+    transaction,
+    actor,
+    action: "order_item.prepared",
+    entityType: "order_item",
+    entityId: orderItem.id,
+    details: {
+        order_id: String(orderItem.order_id),
+        menu_item_id: String(orderItem.menu_item_id),
+        servings: orderItem.quantity,
+
+        deductions: deductions.map((item) => ({
+        ingredient_id: String(item.ingredient.id),
+        ingredient_name: item.ingredient.name,
+        quantity: item.required.toFixed(3),
+        unit: item.ingredient.unit,
+        })),
+    },
+    });
+
 
     return {
       order_item_id: orderItem.id,

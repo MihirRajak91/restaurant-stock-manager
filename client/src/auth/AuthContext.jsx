@@ -14,6 +14,24 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    function handleSessionExpired() {
+      setUser(null);
+    }
+
+    window.addEventListener(
+      "rsm:session-expired",
+      handleSessionExpired
+    );
+
+    return () => {
+      window.removeEventListener(
+        "rsm:session-expired",
+        handleSessionExpired
+      );
+    };
+  }, []);
+
   // Check for an existing valid session on page load.
   useEffect(() => {
     let active = true;

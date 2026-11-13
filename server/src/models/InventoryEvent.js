@@ -16,6 +16,11 @@ const InventoryEvent = sequelize.define(
       allowNull: false,
     },
 
+    recorded_by_user_id: {
+      type: DataTypes.BIGINT,
+      allowNull: true,
+    },
+
     event_type: {
       type: DataTypes.STRING(20),
       allowNull: false,

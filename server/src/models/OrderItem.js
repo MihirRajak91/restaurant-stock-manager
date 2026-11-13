@@ -45,6 +45,12 @@ const OrderItem = sequelize.define("OrderItem", {
     type: DataTypes.DATE,
     allowNull: true,
   },
+
+  prepared_by_user_id: {
+  type: DataTypes.BIGINT,
+  allowNull: true,
+},
+
 }, {
   tableName: "order_items",
   timestamps: false,

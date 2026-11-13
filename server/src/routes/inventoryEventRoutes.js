@@ -53,7 +53,8 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
   try {
     const result = await recordInventoryEvent(
-      req.body ?? {}
+      req.body ?? {},
+      req.user
     );
 
     return res

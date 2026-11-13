@@ -12,6 +12,10 @@ const PurchaseReceipt = sequelize.define("PurchaseReceipt", {
     type: DataTypes.BIGINT,
     allowNull: false,
   },
+  received_by_user_id: {
+    type: DataTypes.BIGINT,
+    allowNull: true,
+  },
   quantity_received: {
     type: DataTypes.DECIMAL(12, 3),
     allowNull: false,

@@ -6,6 +6,8 @@ import { UniqueConstraintError } from "sequelize";
 
 import User from "../models/User.js";
 import { authenticate, allowRoles } from "../middleware/auth.js";
+import sequelize from "../db.js";
+import { writeAudit } from "../services/auditService.js";
 
 import {
   COOKIE_NAME,
@@ -139,9 +141,43 @@ router.post("/change-password", authenticate, async (req, res) => {
       type: argon2.argon2id,
     });
 
-    await req.user.update({
-      password_hash: passwordHash,
-      session_version: req.user.session_version + 1,
+    await sequelize.transaction(async (transaction) => {
+    const user = await User.findByPk(req.user.id, {
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+    });
+
+    if (!user || !user.is_active) {
+        throw new Error("Account no longer active");
+    }
+
+    // Verify the current password again against
+    // the account locked for this transaction.
+    const matches = await argon2.verify(
+        user.password_hash,
+        current_password
+    );
+
+    if (!matches) {
+        throw new Error("Current password changed");
+    }
+
+    await user.update(
+        {
+        password_hash: passwordHash,
+        session_version: user.session_version + 1,
+        },
+        { transaction }
+    );
+
+    await writeAudit({
+        transaction,
+        actor: user,
+        action: "auth.password_changed",
+        entityType: "user",
+        entityId: user.id,
+        details: {},
+    });
     });
 
     res.clearCookie(COOKIE_NAME, clearCookieOptions);

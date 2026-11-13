@@ -13,6 +13,8 @@ import stockMovementRoutes from "./routes/stockMovementRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
+import auditRoutes from "./routes/auditRoutes.js";
 
 // Register associations before running associated queries.
 import "./models/associations.js";
@@ -85,6 +87,8 @@ app.use("/api/ingredients", ingredientRoutes);
 app.use("/api/menu-items", menuItemRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/audit-logs", auditRoutes);
 
 async function startServer(){
     try{

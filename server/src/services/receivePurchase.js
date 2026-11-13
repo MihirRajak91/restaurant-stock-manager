@@ -7,6 +7,7 @@ import Ingredient from "../models/Ingredient.js";
 import PurchaseOrderItem from "../models/PurchaseOrderItem.js";
 import PurchaseReceipt from "../models/PurchaseReceipt.js";
 import StockMovement from "../models/StockMovement.js";
+import { writeAudit } from "./auditService.js";
 
 export class PurchaseError extends Error {
   constructor(status, message) {
@@ -22,6 +23,7 @@ export async function receivePurchase({
   itemId,
   quantity,
   idempotencyKey,
+  actor,
 }) {
   if (
     typeof quantity !== "string" ||
@@ -161,6 +163,7 @@ export async function receivePurchase({
           base_quantity: baseQuantity.toFixed(3),
           unit_cost_per_base: costPerBaseUnit.toFixed(4),
           idempotency_key: idempotencyKey,
+          received_by_user_id: actor.id,
         },
         { transaction }
       );
@@ -198,6 +201,25 @@ export async function receivePurchase({
         },
         { transaction }
       );
+
+    await writeAudit({
+    transaction,
+    actor,
+    action: "purchase.received",
+    entityType: "purchase_receipt",
+    entityId: receipt.id,
+    details: {
+        purchase_order_item_id: String(line.id),
+        ingredient_id: String(ingredient.id),
+        ingredient_name: ingredient.name,
+        received_quantity: received.toFixed(3),
+        purchase_unit: line.purchase_unit,
+        inventory_quantity: baseQuantity.toFixed(3),
+        inventory_unit: ingredient.unit,
+        stock_before: oldQuantity.toFixed(3),
+        stock_after: newQuantity.toFixed(3),
+    },
+    });
 
       return {
         receipt_id: receipt.id,

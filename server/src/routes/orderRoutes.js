@@ -5,6 +5,7 @@ import sequelize from "../db.js";
 import Order from "../models/Order.js";
 import OrderItem from "../models/OrderItem.js";
 import MenuItem from "../models/MenuItem.js";
+import { writeAudit } from "../services/auditService.js";
 import {
   authenticate,
   allowRoles,
@@ -101,6 +102,19 @@ router.post(
           { transaction }
         );
 
+                await writeAudit({
+        transaction,
+        actor: req.user,
+        action: "order.created",
+        entityType: "order",
+        entityId: order.id,
+        details: {
+            order_item_id: String(item.id),
+            menu_item_id: String(menuItem.id),
+            servings: item.quantity,
+        },
+        });
+
         return {
           order_id: order.id,
           order_item_id: item.id,
@@ -136,7 +150,10 @@ router.post(
   }
 
   try {
-    const result = await prepareOrderItem(itemId);
+    const result = await prepareOrderItem(
+        itemId,
+        req.user
+);
 
     return res.json(result);
   } catch (error) {
