@@ -7,6 +7,7 @@ import orderRoutes from "./routes/orderRoutes.js";
 import purchaseRoutes from "./routes/purchaseRoutes.js";
 import inventoryEventRoutes from "./routes/inventoryEventRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
+import reportRoutes from "./routes/reportRoutes.js";
 
 // Register associations before running associated queries.
 import "./models/associations.js";
@@ -34,6 +35,7 @@ app.get("/api/health", (req,res) => {
 app.use("/api/ingredients", ingredientRoutes);
 app.use("/api/menu-items", menuItemRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/reports", reportRoutes);
 
 async function startServer(){
     try{

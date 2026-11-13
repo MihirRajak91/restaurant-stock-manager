@@ -4,6 +4,7 @@ import KitchenPage from "./pages/KitchenPage.jsx";
 import PurchasesPage from "./pages/PurchasesPage.jsx";
 import WasteAdjustmentsPage from "./pages/WasteAdjustmentsPage.jsx";
 import DashboardPage from "./pages/DashboardPage.jsx";
+import ReportsPage from "./pages/ReportsPage.jsx";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
       <PurchasesPage />
       <WasteAdjustmentsPage />
       <DashboardPage />
+      <ReportsPage />
     </main>
   );
 }
