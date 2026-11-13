@@ -1,6 +1,6 @@
 import pkg from "sequelize";
 const { DataTypes } = pkg;
-import sequelize from "../src/db.js";
+import sequelize from "../db.js";
 
 const Ingredient = sequelize.define(
     "Ingredient",
@@ -50,7 +50,12 @@ const Ingredient = sequelize.define(
             type: DataTypes.BOOLEAN,
             allowNull: false,
             defaultValue: true,
-        }
+        },
+        archived_at: {
+            type: DataTypes.DATE,
+            allowNull: true,
+            defaultValue: null,
+        },
     },
     {
         tableName: "ingredients",
