@@ -5,6 +5,10 @@ import RecipeIngredient from "./RecipeIngredient.js";
 import Order from "./Order.js";
 import OrderItem from "./OrderItem.js";
 import StockMovement from "./StockMovement.js";
+import Supplier from "./Supplier.js";
+import PurchaseOrder from "./PurchaseOrder.js";
+import PurchaseOrderItem from "./PurchaseOrderItem.js";
+import PurchaseReceipt from "./PurchaseReceipt.js";
 
 // One menu item can contain many ingredients.
 MenuItem.belongsToMany(Ingredient, {
@@ -52,3 +56,47 @@ OrderItem.hasMany(StockMovement, {
   foreignKey: "order_item_id",
 });
 
+// One supplier has many purchase orders.
+Supplier.hasMany(PurchaseOrder, {
+  as: "purchaseOrders",
+  foreignKey: "supplier_id",
+});
+
+PurchaseOrder.belongsTo(Supplier, {
+  as: "supplier",
+  foreignKey: "supplier_id",
+});
+
+// Each purchase order has ingredient lines.
+PurchaseOrder.hasMany(PurchaseOrderItem, {
+  as: "items",
+  foreignKey: "purchase_order_id",
+});
+
+PurchaseOrderItem.belongsTo(PurchaseOrder, {
+  as: "purchaseOrder",
+  foreignKey: "purchase_order_id",
+});
+
+// Each purchase line refers to an ingredient.
+PurchaseOrderItem.belongsTo(Ingredient, {
+  as: "ingredient",
+  foreignKey: "ingredient_id",
+});
+
+// A purchase line can have multiple receipts.
+PurchaseOrderItem.hasMany(PurchaseReceipt, {
+  as: "receipts",
+  foreignKey: "purchase_order_item_id",
+});
+
+PurchaseReceipt.belongsTo(PurchaseOrderItem, {
+  as: "purchaseOrderItem",
+  foreignKey: "purchase_order_item_id",
+});
+
+// The stock movement identifies its receipt.
+StockMovement.belongsTo(PurchaseReceipt, {
+  as: "purchaseReceipt",
+  foreignKey: "purchase_receipt_id",
+});

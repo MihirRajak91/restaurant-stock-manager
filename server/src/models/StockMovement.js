@@ -44,6 +44,13 @@ const StockMovement = sequelize.define("StockMovement", {
     allowNull: false,
     defaultValue: DataTypes.NOW,
   },
+
+
+purchase_receipt_id: {
+  type: DataTypes.BIGINT,
+  allowNull: true,
+},
+
 }, {
   tableName: "stock_movements",
   timestamps: false,

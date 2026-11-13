@@ -1,6 +1,7 @@
 import IngredientsPage from "./pages/IngredientsPage.jsx";
 import RecipesPage from "./pages/RecipesPage.jsx";
 import KitchenPage from "./pages/KitchenPage.jsx";
+import PurchasesPage from "./pages/PurchasesPage.jsx";
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
       <IngredientsPage />
       <RecipesPage />
       <KitchenPage />
+      <PurchasesPage />
     </main>
   );
 }

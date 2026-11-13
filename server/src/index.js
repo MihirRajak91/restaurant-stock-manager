@@ -4,6 +4,7 @@ import sequelize from "./db.js";
 import ingredientRoutes from "./routes/ingredientRoutes.js";
 import menuItemRoutes from "./routes/menuItemRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
+import purchaseRoutes from "./routes/purchaseRoutes.js";
 
 // Register associations before running associated queries.
 import "./models/associations.js";
@@ -18,6 +19,7 @@ app.use(cors({ origin: /^http:\/\/(localhost|127\.0\.0\.1):\d+$/ }));
 app.use(express.json());
 
 app.use("/api", orderRoutes);
+app.use("/api/purchases", purchaseRoutes);
 
 app.get("/api/health", (req,res) => {
     res.json({
